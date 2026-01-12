@@ -1,0 +1,36 @@
+bundle:
+  name: DabDemo
+
+include:
+  - src/*.yml
+  - src/env/*.yml
+  - resources/jobs/*.yml
+  - resources/pipelines/*.yml
+  - resources/schemas/*.yml
+  
+permissions:
+  - level: CAN_MANAGE
+    group_name: users
+
+targets:
+  dev:
+    mode: development
+    default: true
+    workspace:
+      host: https://dbc-202f4808-1754.cloud.databricks.com
+  uat:
+    development: 
+      default: false
+    presets:
+      name_prefix: (uat_${workspace.current_user.short_name})
+    workspace:
+      host: https://dbc-202f4808-1754.cloud.databricks.com
+  prod:
+    development: 
+      default: false
+    presets:
+      name_prefix: (prod_${workspace.current_user.short_name})
+    workspace:
+      host: https://dbc-202f4808-1754.cloud.databricks.com 
+    
+    

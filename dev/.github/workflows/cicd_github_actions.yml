@@ -1,0 +1,176 @@
+name: "CD: Deploy Platform"
+on:
+  pull_request:
+    branches: [main]
+    types: [closed]
+
+jobs:
+  # --- Deployment for DEV ---
+  deploy-dev:
+    if: github.event.pull_request.merged == true && github.base_ref == 'main'
+    runs-on: ubuntu-latest
+    environment: dev
+    steps:
+      - uses: actions/checkout@v4
+      - uses: databricks/setup-cli@main
+      
+      - name: Validate Dev Bundle
+        run: databricks bundle validate -t dev
+        env:
+          DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+          # DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
+          DATABRICKS_CLIENT_ID: ${{ secrets.CLIENT_ID }}
+          DATABRICKS_CLIENT_SECRET: ${{ secrets.CLIENT_SECRET }}
+
+      - name: Deploy to Dev
+        run: databricks bundle deploy -t dev --auto-approve
+        env:
+          DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+          # DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
+          DATABRICKS_CLIENT_ID: ${{ secrets.CLIENT_ID }}
+          DATABRICKS_CLIENT_SECRET: ${{ secrets.CLIENT_SECRET }}
+
+      # - name: Extract and Run Resources
+      #   run: |
+      #     # 1. Generate the resolved bundle configuration
+      #     # This merges your separate .yml files into one JSON object
+      #     databricks bundle validate -t dev --output json > resolved.json
+
+      #     # 2. Extract the first Job key (e.g., DAB_Demo_job)
+      #     JOB_KEY=$(jq -r '.resources.jobs | keys[0] // empty' resolved.json)
+          
+      #     # 3. Extract the first Pipeline key (e.g., dlt_demo_dab)
+      #     PIPELINE_KEY=$(jq -r '.resources.pipelines | keys[0] // empty' resolved.json)
+
+      #     # 4. Run Job if it exists
+      #     if [ ! -z "$JOB_KEY" ]; then
+      #       echo "Found Job: $JOB_KEY. Triggering run..."
+      #       databricks bundle run -t dev "$JOB_KEY"
+      #     else
+      #       echo " No Jobs found in bundle resources."
+      #     fi
+
+      #     # 5. Run Pipeline if it exists
+      #     if [ ! -z "$PIPELINE_KEY" ]; then
+      #       echo "Found Pipeline: $PIPELINE_KEY. Triggering run..."
+      #       databricks bundle run -t dev "$PIPELINE_KEY"
+      #     else
+      #       echo " No Pipelines found in bundle resources."
+      #     fi
+      #   env:
+      #     DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+      #     DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
+
+  # --- Deployment for UAT ---
+  deploy-uat:
+    needs: deploy-dev
+    runs-on: ubuntu-latest
+    environment: uat
+    steps:
+      - uses: actions/checkout@v4
+      - uses: databricks/setup-cli@main
+
+      - name: Validate UAT Bundle
+        run: databricks bundle validate -t uat
+        env:
+          DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+          # DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_UAT_TOKEN }}
+          DATABRICKS_CLIENT_ID: ${{ secrets.CLIENT_ID }}
+          DATABRICKS_CLIENT_SECRET: ${{ secrets.CLIENT_SECRET }}
+
+      - name: Deploy to UAT
+        run: databricks bundle deploy -t uat --auto-approve
+        env:
+          DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+          # DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_UAT_TOKEN }}
+          DATABRICKS_CLIENT_ID: ${{ secrets.CLIENT_ID }}
+          DATABRICKS_CLIENT_SECRET: ${{ secrets.CLIENT_SECRET }}
+
+      # - name: Extract and Run Resources
+      #   run: |
+      #     # 1. Generate the resolved bundle configuration
+      #     # This merges your separate .yml files into one JSON object
+      #     databricks bundle validate -t uat --output json > resolved.json
+
+      #     # 2. Extract the first Job key (e.g., DAB_Demo_job)
+      #     JOB_KEY=$(jq -r '.resources.jobs | keys[0] // empty' resolved.json)
+          
+      #     # 3. Extract the first Pipeline key (e.g., dlt_demo_dab)
+      #     PIPELINE_KEY=$(jq -r '.resources.pipelines | keys[0] // empty' resolved.json)
+
+      #     # 4. Run Job if it exists
+      #     if [ ! -z "$JOB_KEY" ]; then
+      #       echo "Found Job: $JOB_KEY. Triggering run..."
+      #       databricks bundle run -t uat "$JOB_KEY"
+      #     else
+      #       echo " No Jobs found in bundle resources."
+      #     fi
+
+      #     # 5. Run Pipeline if it exists
+      #     if [ ! -z "$PIPELINE_KEY" ]; then
+      #       echo "Found Pipeline: $PIPELINE_KEY. Triggering run..."
+      #       databricks bundle run -t uat "$PIPELINE_KEY"
+      #     else
+      #       echo " No Pipelines found in bundle resources."
+      #     fi
+      #   env:
+      #     DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+      #     DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_UAT_TOKEN }}
+    
+    
+    # --- Deployment for Prod ---
+    deploy-prod:
+      needs: deploy-uat
+      runs-on: ubuntu-latest
+      environment: prod
+      steps:
+        - uses: actions/checkout@v4
+        - uses: databricks/setup-cli@main
+
+        - name: Validate prod Bundle
+          run: databricks bundle validate -t prod
+          env:
+            DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+            # DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_prod_TOKEN }}
+            DATABRICKS_CLIENT_ID: ${{ secrets.CLIENT_ID }}
+            DATABRICKS_CLIENT_SECRET: ${{ secrets.CLIENT_SECRET }}
+
+        - name: Deploy to prod
+          run: databricks bundle deploy -t prod --auto-approve
+          env:
+            DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+            # DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_prod_TOKEN }}
+            DATABRICKS_CLIENT_ID: ${{ secrets.CLIENT_ID }}
+            DATABRICKS_CLIENT_SECRET: ${{ secrets.CLIENT_SECRET }}
+
+        # - name: Extract and Run Resources
+        #   run: |
+        #     # 1. Generate the resolved bundle configuration
+        #     # This merges your separate .yml files into one JSON object
+        #     databricks bundle validate -t prod --output json > resolved.json
+
+        #     # 2. Extract the first Job key (e.g., DAB_Demo_job)
+        #     JOB_KEY=$(jq -r '.resources.jobs | keys[0] // empty' resolved.json)
+            
+        #     # 3. Extract the first Pipeline key (e.g., dlt_demo_dab)
+        #     PIPELINE_KEY=$(jq -r '.resources.pipelines | keys[0] // empty' resolved.json)
+
+        #     # 4. Run Job if it exists
+        #     if [ ! -z "$JOB_KEY" ]; then
+        #       echo "Found Job: $JOB_KEY. Triggering run..."
+        #       databricks bundle run -t prod "$JOB_KEY"
+        #     else
+        #       echo " No Jobs found in bundle resources."
+        #     fi
+
+        #     # 5. Run Pipeline if it exists
+        #     if [ ! -z "$PIPELINE_KEY" ]; then
+        #       echo "Found Pipeline: $PIPELINE_KEY. Triggering run..."
+        #       databricks bundle run -t uat "$PIPELINE_KEY"
+        #     else
+        #       echo " No Pipelines found in bundle resources."
+        #     fi
+        #   env:
+        #     DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+        #     DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_UAT_TOKEN }}
+        

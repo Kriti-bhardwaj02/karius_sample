@@ -1,0 +1,20 @@
+# 1. Define the variable name and its global default
+variables:
+  catalog:
+    description: This is the name of the target catalog
+    default: test-neha-catalog  # This will be used if no target matches
+
+# 2. Define the targets and override the variable value for each
+targets:
+  dev:
+    variables:
+      catalog: test-neha-catalog
+  
+  uat:
+    variables:
+      catalog: poccatalog
+
+  prod:
+    variables:
+      catalog: poccatalog
+
