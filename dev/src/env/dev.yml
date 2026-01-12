@@ -1,0 +1,9 @@
+target:
+  dev:
+    permissions:
+      - group_name: users
+        level: CAN_MANAGE
+      
+
+presets:
+  name_prefix: (dev_${workspace.current_user.short_name})

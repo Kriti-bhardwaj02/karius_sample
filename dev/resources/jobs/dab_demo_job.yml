@@ -1,0 +1,28 @@
+resources:
+  jobs:
+    DAB_Demo_job:
+      name: DAB_Demo_job
+      tasks:
+        - task_key: dab_job
+          notebook_task:
+            notebook_path: ../notebooks/demo_nb.py
+            source: WORKSPACE
+          job_cluster_key: Job_cluster
+      job_clusters:
+        - job_cluster_key: Job_cluster
+          new_cluster:
+            cluster_name: ""
+            spark_version: 17.3.x-scala2.13
+            aws_attributes:
+              first_on_demand: 1
+              availability: SPOT_WITH_FALLBACK
+              spot_bid_price_percent: 100
+            node_type_id: rd-fleet.xlarge
+            spark_env_vars:
+              PYSPARK_PYTHON: /databricks/python3/bin/python3
+            data_security_mode: SINGLE_USER
+            kind: CLASSIC_PREVIEW
+            is_single_node: false
+            num_workers: 1
+      queue:
+        enabled: true

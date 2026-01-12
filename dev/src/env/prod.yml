@@ -1,0 +1,9 @@
+target:
+  prod:
+    permissions:
+      - group_name: users
+        level: CAN_VIEW
+      
+
+presets:
+  name_prefix: (prod_${workspace.current_user.short_name})
